@@ -11,9 +11,11 @@ class LatticeNode():
 	:ivar south: reference to the node to the south 
 	:ivar east: reference to the node to the east
 	:ivar west: reference to the node to the west
+    :ivar col_head: reference to the head node of the column
+    :ivar col_name: the name of the column. Only not null if the node is a head
 
 	"""
-    def __init__(self, key, north = None, south = None, east = None, west = None, col_head = None):
+    def __init__(self, key=None, north = None, south = None, east = None, west = None, col_head = None, col_name=None):
         """ Initializes a new Lattice Node """
         self.key = key
         self.north = north
@@ -21,6 +23,7 @@ class LatticeNode():
         self.east = east
         self.west = west
         self.col_head = col_head
+        self.col_name = col_name
 
     def set_north(self, new_north):
         """ Helper function: set the node to the north, and set that nodes south to this"""
@@ -49,22 +52,27 @@ class Lattice():
     """
 	A lattice data structure implementation.
   	:ivar matrix: the 2-dimensional array to be created into a lattice. The array can be of ANY type. the contents of the array become the keys of the Lattice
+    :ivar col_names: the list of names where index i corresponds to column i
     """
 
-    def __init__(self, matrix):
+    def __init__(self, matrix, col_names):
         assert matrix is not None
         assert matrix[0] is not None
         assert matrix[0][0] is not None
 
-        self.ancor = LatticeNode(matrix[0][0])
+        self.head = LatticeNode()
 
-        lattice_node_matrix = []
+        lattice_node_matrix = [[]]
+
+        # Insert the Column Headers
+        for c in range(0, len(matrix[0])):
+            lattice_node_matrix[0].append(LatticeNode(col_name=col_names[c]))
+
         # Initialize the LatticeNodes
         for r in range(0, len(matrix)):
             lattice_node_matrix.append([])
             for c in range(0, len(matrix[r])):
-                lattice_node_matrix[r].append(LatticeNode(matrix[r][c]))
-        lattice_node_matrix[0][0] = self.ancor
+                lattice_node_matrix[r+1].append(LatticeNode(matrix[r][c], col_head=lattice_node_matrix[0][c]))
         
         # TRIVIALLY Connect the lattice nodes horizontally
         for r in range(0, len(lattice_node_matrix)):
@@ -84,6 +92,10 @@ class Lattice():
         for r in range(0, len(lattice_node_matrix)):
             lattice_node_matrix[r][0].set_west(lattice_node_matrix[r][len(lattice_node_matrix[0])-1])
         
+        # Insert the head node(no north or south)
+        self.head.set_east(lattice_node_matrix[0][0])
+        self.head.set_west(lattice_node_matrix[0][-1])
+        
     def delete(self, lattice_node):
         # Here you just have to make 2 new connections that skip over lattice_node
         lattice_node.east.set_west(lattice_node.west)
@@ -102,13 +114,16 @@ class Lattice():
         # Printing solution that does not depend on rows or cols
         res = ""
         i = 0
-        row_ref = self.ancor
-        while row_ref is not self.ancor or i == 0:
+        row_ref = self.head.east
+        while row_ref.col_name == None or i == 0:
             res += "("
             col_ref = row_ref
             j = 0
-            while col_ref is not row_ref or j == 0:
-                res += col_ref.key + ", "
+            while (col_ref is not row_ref or j == 0) and col_ref is not self.head:
+                if col_ref.key is not None:
+                    res += col_ref.key + ", "
+                elif col_ref.col_name is not None:
+                    res += col_ref.col_name + ", "
                 col_ref = col_ref.east
                 j += 1
             res = res[:-2]
@@ -150,90 +165,100 @@ class LatticeNode_UnitTest(unittest.TestCase):
 class Lattice_UnitTest(unittest.TestCase):
     def test_constructor(self):
         """Tests on a simple 3x3 lattice where each key is a character unique to the lattice""" 
-        expected =  "(a, b, c), (d, e, f), (g, h, i)"
+        expected =  "(1, 2, 3), (a, b, c), (d, e, f), (g, h, i)"
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
+        lattice = Lattice(matrix, ['1', '2', '3'])
         self.assertEqual(expected, lattice.__str__())
-        self.assertEqual(lattice.ancor.key, 'a')
 
     def test_row_wrap(self):
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
-        west_edge = lattice.ancor
-        east_edge = lattice.ancor.east.east # The lattice node with the key of c
+        lattice = Lattice(matrix, col_names)
+        west_edge = lattice.head.east.south
+        east_edge = lattice.head.east.east.east.south # The lattice node with the key of c
         for i in range(3):
             self.assertEqual(west_edge.west, east_edge)
             self.assertEqual(east_edge.east, west_edge)
             west_edge = west_edge.south
             east_edge = east_edge.south
-        # after 3 they should have wrapped col-wise back to the first col
-        self.assertEqual(west_edge, lattice.ancor)
-        self.assertEqual(east_edge, lattice.ancor.east.east)
-        
-    def test_col_wrap(self):
+    
+    def test_head_wrap(self):
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
-        north_edge = lattice.ancor
-        south_edge = lattice.ancor.south.south # The lattice node with the key of c
+        lattice = Lattice(matrix, col_names)
+        west_edge = lattice.head
+        east_edge = lattice.head.east.east.east# The column head lattice node with the name of 3
+        self.assertEqual(west_edge.west, east_edge)
+        self.assertEqual(east_edge.east, west_edge)
+        
+    def test_col_wrap(self):
+        col_names = ['1', '2', '3']
+        matrix = [['a', 'b', 'c'],
+                  ['d', 'e', 'f'],
+                  ['g', 'h', 'i']]
+        lattice = Lattice(matrix, col_names)
+        north_edge = lattice.head.east
+        south_edge = lattice.head.east.south.south.south # The lattice node with the key of c
         for i in range(3):
             self.assertEqual(north_edge.north, south_edge)
             self.assertEqual(south_edge.south, north_edge)
             north_edge = north_edge.east
             south_edge = south_edge.east
-        # after 3 they should have wrapped row-wise back to the first row
-        self.assertEqual(north_edge, lattice.ancor)
-        self.assertEqual(south_edge, lattice.ancor.south.south)
 
     def test_delete1(self):
         # Deleting 'e'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
-        lattice.delete(lattice.ancor.east.south)
-        exptected = "(a, b, c), (d, f), (g, h, i)"
+        lattice = Lattice(matrix, col_names)
+        lattice.delete(lattice.head.east.east.south.south)
+        exptected = "(1, 2, 3), (a, b, c), (d, f), (g, h, i)"
         actual = lattice.__str__()
         self.assertEqual(exptected, actual)
 
     def test_restore1(self):
         # Deleting then restoring 'e'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
+        lattice = Lattice(matrix, col_names)
         pre_delete = lattice.__str__()
-        deleted_node = lattice.delete(lattice.ancor.east.south)
-        # lattice is now (a, b, c), (d, f), (g, h, i)
+        deleted_node = lattice.delete(lattice.head.east.east.south)
+        # lattice is now (1, 2, 3), (a, b, c), (d, f), (g, h, i)
         lattice.restore(deleted_node)
-        # lattice should now be (a, b, c), (d, e, f), (g, h, i)
+        # lattice should now be (1, 2, 3), (a, b, c), (d, e, f), (g, h, i)
         post_restore = lattice.__str__()
         self.assertEqual(pre_delete, post_restore)
 
     def test_delete2(self):
         # Deleting 'b;
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
-        lattice.delete(lattice.ancor.east)
-        exptected = "(a, c), (d, e, f), (g, h, i)"
+        lattice = Lattice(matrix, col_names)
+        lattice.delete(lattice.head.east.south.east)
+        exptected = "(1, 2, 3), (a, c), (d, e, f), (g, h, i)"
         actual = lattice.__str__()
         self.assertEqual(exptected, actual)
 
     def test_restore2(self):
         # Deleting then restoring 'b'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
+        lattice = Lattice(matrix, col_names)
         pre_delete = lattice.__str__()
-        deleted_node = lattice.delete(lattice.ancor.east)
+        deleted_node = lattice.delete(lattice.head.east.south.east)
 
         lattice.restore(deleted_node)
 
@@ -242,23 +267,25 @@ class Lattice_UnitTest(unittest.TestCase):
 
     def test_delete3(self):
         # Deleting 'c'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
-        lattice.delete(lattice.ancor.east.east)
-        exptected = "(a, b), (d, e, f), (g, h, i)"
+        lattice = Lattice(matrix, col_names)
+        lattice.delete(lattice.head.east.east.east.south)
+        exptected = "(1, 2, 3), (a, b), (d, e, f), (g, h, i)"
         actual = lattice.__str__()
         self.assertEqual(exptected, actual)
 
     def test_restore3(self):
         # Deleting then restoring 'c'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
+        lattice = Lattice(matrix, col_names)
         pre_delete = lattice.__str__()
-        deleted_node = lattice.delete(lattice.ancor.east.east)
+        deleted_node = lattice.delete(lattice.head.east.east.east.south)
 
         lattice.restore(deleted_node)
 
@@ -267,28 +294,45 @@ class Lattice_UnitTest(unittest.TestCase):
 
     def test_delete4(self):
         # Deleting 'h'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
-        lattice.delete(lattice.ancor.east.south.south)
-        exptected = "(a, b, c), (d, e, f), (g, i)"
+        lattice = Lattice(matrix, col_names)
+        lattice.delete(lattice.head.east.east.south.south.south)
+        exptected = "(1, 2, 3), (a, b, c), (d, e, f), (g, i)"
         actual = lattice.__str__()
         self.assertEqual(exptected, actual)
 
     def test_restore4(self):
         # Deleting then restoring 'h'
+        col_names = ['1', '2', '3']
         matrix = [['a', 'b', 'c'],
                   ['d', 'e', 'f'],
                   ['g', 'h', 'i']]
-        lattice = Lattice(matrix)
+        lattice = Lattice(matrix, col_names)
         pre_delete = lattice.__str__()
-        deleted_node = lattice.delete(lattice.ancor.east.south.south)
+        deleted_node = lattice.delete(lattice.head.east.east.south.south.south)
 
         lattice.restore(deleted_node)
 
         post_restore = lattice.__str__()
         self.assertEqual(pre_delete, post_restore)
+
+    def test_col_head(self):
+        col_names = ['1', '2', '3']
+        matrix = [['a', 'b', 'c'],
+                  ['d', 'e', 'f'],
+                  ['g', 'h', 'i']]
+        lattice = Lattice(matrix, col_names)
+        a = lattice.head.east.south
+        self.assertEqual(lattice.head.east, a.col_head)
+        b = a.east
+        self.assertEqual(lattice.head.east.east, b.col_head)
+        e = b.south
+        self.assertEqual(lattice.head.east.east, e.col_head)
+        i = b.south.east
+        self.assertEqual(lattice.head.east.east.east, i.col_head)
 
 def main():
     unittest.main()

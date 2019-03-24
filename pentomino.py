@@ -1,5 +1,6 @@
 import unittest
 import numpy as np
+from lattice import *
 
 class PentomintoShape():
     def __init__(self, shape, index=0, num_orientations=0, name=''):
