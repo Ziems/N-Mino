@@ -24,6 +24,17 @@ class LatticeNode():
         self.west = west
         self.col_head = col_head
         self.col_name = col_name
+        self.size = 0
+
+    def init_size(self):
+        count = 0
+        ref = self.south
+        while ref is not self:
+            if ref.key is '1':
+                count += 1
+            ref = ref.south
+        self.size = count
+        return count
 
     def set_north(self, new_north):
         """ Helper function: set the node to the north, and set that nodes south to this"""
@@ -66,7 +77,9 @@ class Lattice():
 
         # Insert the Column Headers
         for c in range(0, len(matrix[0])):
-            lattice_node_matrix[0].append(LatticeNode(col_name=col_names[c]))
+            new_head = LatticeNode(col_name=col_names[c])
+            new_head.col_head = new_head
+            lattice_node_matrix[0].append(new_head)
 
         # Initialize the LatticeNodes
         for r in range(0, len(matrix)):
@@ -95,6 +108,11 @@ class Lattice():
         # Insert the head node(no north or south)
         self.head.set_east(lattice_node_matrix[0][0])
         self.head.set_west(lattice_node_matrix[0][-1])
+
+        c = self.head.east
+        while c is not self.head:
+            c.init_size()
+            c = c.east
         
     def delete(self, lattice_node):
         # Here you just have to make 2 new connections that skip over lattice_node
@@ -112,25 +130,38 @@ class Lattice():
 
     def __str__(self):
         # Printing solution that does not depend on rows or cols
+        # res = ""
+        # i = 0
+        # row_ref = self.head.east
+        # while row_ref.col_name == None or i == 0:
+        #     res += "("
+        #     col_ref = row_ref
+        #     j = 0
+        #     while (col_ref is not row_ref or j == 0) and col_ref is not self.head:
+        #         if col_ref.key is not None:
+        #             res += col_ref.key + ", "
+        #         elif col_ref.col_name is not None:
+        #             res += col_ref.col_name + ", "
+        #         col_ref = col_ref.east
+        #         j += 1
+        #     res = res[:-2]
+        #     i += 1
+        #     row_ref = row_ref.south
+        #     res += "), "
+        # res = res[:-2]
+        # return res
         res = ""
-        i = 0
-        row_ref = self.head.east
-        while row_ref.col_name == None or i == 0:
-            res += "("
-            col_ref = row_ref
-            j = 0
-            while (col_ref is not row_ref or j == 0) and col_ref is not self.head:
-                if col_ref.key is not None:
-                    res += col_ref.key + ", "
-                elif col_ref.col_name is not None:
-                    res += col_ref.col_name + ", "
-                col_ref = col_ref.east
-                j += 1
-            res = res[:-2]
-            i += 1
-            row_ref = row_ref.south
-            res += "), "
-        res = res[:-2]
+        c = self.head.east
+        cs = []
+        rs = []
+        res += "("
+        while c is not self.head:
+            res += c.col_name + ", "
+            rs.append([])
+            cs.append(c.col_name)
+            c = c.east
+        #TODO FINISH THIS
+        res = res[:-2] + ")"
         return res
 
 class LatticeNode_UnitTest(unittest.TestCase):
@@ -333,6 +364,24 @@ class Lattice_UnitTest(unittest.TestCase):
         self.assertEqual(lattice.head.east.east, e.col_head)
         i = b.south.east
         self.assertEqual(lattice.head.east.east.east, i.col_head)
+    
+    def test_col_size(self):
+        col_names = ['1', '2', '3']
+        matrix = [['0', '1', '0'],
+                  ['0', '1', '0'],
+                  ['0', '0', '0']]
+        lattice = Lattice(matrix, col_names)
+        second_col = lattice.head.east.east
+        self.assertEqual(2, second_col.size)
+
+    def test_south_north(self):
+        col_names = ['a', 'b', 'c']
+        matrix = [['0', '1', '1'],
+                  ['1', '0', '0'],
+                  ['1', '1', '1']]
+        lattice = Lattice(matrix, col_names)
+        b1 = lattice.head.east.east.south
+        self.assertEqual(b1, b1.south.north)
 
 def main():
     unittest.main()

@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from lattice import *
+from lattice import Lattice
 
 class PentomintoShape():
     def __init__(self, shape, index=0, num_orientations=0, name=''):
@@ -150,17 +150,15 @@ def generate_all_orientations_with_encodings(shapes):
                 encodings.append(p)
     return encodings
 
-def generate_exact_cover_solutions(lattice):
-    pass
-
 class Pentominto_UnitTest(unittest.TestCase):
     def test_generate_positions(self):
-        shape = [[0, 1, 1],
-                 [1, 1, 0],
-                 [0, 1, 0]]
+        shape = [[1],
+                 [1],
+                 [1],
+                 [1]]
         shape_index = 1
         positions = generate_positions(shape, shape_index, board_shape=(6, 10))
-        self.assertEqual(192, len(positions))
+        self.assertEqual(30, len(positions))
 
     def test_encode_board(self):
         board = [[1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
@@ -257,11 +255,24 @@ class Pentominto_UnitTest(unittest.TestCase):
         base_shapes = get_base_shapes()
         binary_matrix = generate_all_orientations_with_encodings(base_shapes)
         # Knuth says this should be 1568 in length but its about 25% more than that. Hmmm.
-        print(len(binary_matrix))
+        #print(len(binary_matrix))
 
-    def test_exact_cover():
-        base_shapes = get_base_shapes()
-        binary_matrix = generate_all_orientations_with_encodings(base_shapes)
-        lattice = Lattice(binary_matrix)
-        solutions = generate_exact_cover_solutions(lattice)
-        pass
+    # def test_exact_cover(self):
+    #     base_shapes = get_base_shapes()
+    #     col_names = []
+    #     for shape in base_shapes:
+    #         col_names.append(shape.name)
+    #     for i in range(1, 60+1):
+    #         col_names.append(i)
+    #     binary_matrix = generate_all_orientations_with_encodings(base_shapes)
+    #     lattice = Lattice(binary_matrix, col_names)
+    #     solutions = generate_exact_cover_solutions(lattice)
+    #     for i in solutions:
+    #         print(i.col_name)
+    #     self.assertIsNotNone(solutions)
+
+def main():
+    unittest.main()
+
+if __name__ == '__main__':
+        main()
