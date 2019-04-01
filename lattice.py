@@ -3,7 +3,7 @@
 import unittest
 import numpy as np
 
-class LatticeNode():
+class Node():
     """ A lattice element.
 
 	:ivar key: the key value
@@ -15,7 +15,7 @@ class LatticeNode():
     :ivar col_name: the name of the column. Only not null if the node is a head
 
 	"""
-    def __init__(self, key=None, north = None, south = None, east = None, west = None, col_head = None, col_name=None):
+    def __init__(self, key=None, row_num = None, row_col = None, north = None, south = None, east = None, west = None, col_head = None, col_name=None):
         """ Initializes a new Lattice Node """
         self.key = key
         self.north = north
@@ -24,6 +24,8 @@ class LatticeNode():
         self.west = west
         self.col_head = col_head
         self.col_name = col_name
+        self.row_num = row_num
+        self.col_num = row_col
         self.size = 0
 
     def init_size(self):
@@ -71,13 +73,13 @@ class Lattice():
         assert matrix[0] is not None
         assert matrix[0][0] is not None
 
-        self.head = LatticeNode()
+        self.head = Node()
 
         lattice_node_matrix = [[]]
 
         # Insert the Column Headers
         for c in range(0, len(matrix[0])):
-            new_head = LatticeNode(col_name=col_names[c])
+            new_head = Node(col_name=col_names[c])
             new_head.col_head = new_head
             lattice_node_matrix[0].append(new_head)
 
@@ -85,7 +87,7 @@ class Lattice():
         for r in range(0, len(matrix)):
             lattice_node_matrix.append([])
             for c in range(0, len(matrix[r])):
-                lattice_node_matrix[r+1].append(LatticeNode(matrix[r][c], col_head=lattice_node_matrix[0][c]))
+                lattice_node_matrix[r+1].append(Node(matrix[r][c], col_head=lattice_node_matrix[0][c]))
         
         # TRIVIALLY Connect the lattice nodes horizontally
         for r in range(0, len(lattice_node_matrix)):
@@ -108,6 +110,10 @@ class Lattice():
         # Insert the head node(no north or south)
         self.head.set_east(lattice_node_matrix[0][0])
         self.head.set_west(lattice_node_matrix[0][-1])
+        self.head.north = self.head
+        self.head.south = self.head
+        self.head.col_head = self.head
+        self.head.col_name = 'head'
 
         c = self.head.east
         while c is not self.head:
@@ -152,16 +158,22 @@ class Lattice():
         # return res
         res = ""
         c = self.head.east
-        cs = []
-        rs = []
+        cs = {}
         res += "("
         while c is not self.head:
             res += c.col_name + ", "
-            rs.append([])
-            cs.append(c.col_name)
+            cs[c.col_name] = []
+            r = c.south
+            while r is not c:
+                cs[c.col_name].append(r.key)
+                r = r.south
             c = c.east
-        #TODO FINISH THIS
-        res = res[:-2] + ")"
+        res = res[:-2] + ")\n"
+        for i in cs.keys():
+            res += "[" + i + "]: "
+            for j in cs[i]:
+                res += j + ", "
+            res = res[:-2] + "\n"
         return res
 
 class LatticeNode_UnitTest(unittest.TestCase):
