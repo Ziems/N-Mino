@@ -39,7 +39,7 @@ def cover_col(lattice, c):
     return lattice
 
 def uncover_col(lattice, c):
-    print("Uncovering col")
+    #print("Uncovering col")
     c = c.col_head
     i = c.north
     while i is not c:
@@ -55,35 +55,36 @@ def uncover_col(lattice, c):
     return lattice
 
 def generate_exact_cover_solutions(lattice):
-
+    solutions = []
     O = []
 
-    def exact_cover_search(k, lattice):
+    def exact_cover_search(k):
         #If R[h] = h, print the current solution and return
         if lattice.head.east is lattice.head:
+            print("Adding solution")
+            solutions.append(O)
             return lattice
         #Otherwise choose a column object c
         c = choose_col(lattice)
         #Cover column c
-        lattice = cover_col(lattice, c)
+        cover_col(lattice, c)
         #for each r <- D[c], D[D[c]], ... , while r is not c,
         r = c.south
         while r is not c:
            #print("While 1")
             #set O_k <- r
-            print("Adding solution")
-            O.insert(k, r) 
+            O.insert(k, r)
             #for each j <- R[r], R[R[r]], ... , while j is not r,
             j = r.east
             while j is not r:
                 #print("while2")
                 # cover column C[j]
                 #print("LATTICE2: ", lattice)
-                lattice = cover_col(lattice, j)
+                cover_col(lattice, j)
                 j = j.east
             #search(k + 1)
             #print("Recursive search")
-            lattice = exact_cover_search(k, lattice)
+            exact_cover_search(k + 1)
             #set r <- O_k and c <- C[r]
             r = O[k]
             c = r.col_head
@@ -91,13 +92,13 @@ def generate_exact_cover_solutions(lattice):
             j = r.west
             while j is not r:
                 #uncover column C[j]
-                lattice = uncover_col(lattice, j)
+                uncover_col(lattice, j)
                 j = j.west
             r = r.south
         #uncover column c and return
-        lattice = uncover_col(lattice, c)
-    exact_cover_search(0, lattice)
-    return O
+        uncover_col(lattice, c)
+    exact_cover_search(0)
+    return solutions
 
 class ExactCover_UnitTest(unittest.TestCase):
 
@@ -154,7 +155,7 @@ class ExactCover_UnitTest(unittest.TestCase):
         col_names = ['a', 'b', 'c']
         matrix = [['0', '1', '1'],
                   ['1', '0', '0'],
-                  ['1', '1', '1']]
+                  ['1', '0', '1']]
         lattice = Lattice(matrix, col_names)
         c = lattice.head.east
         while c is not lattice.head:
@@ -166,6 +167,7 @@ class ExactCover_UnitTest(unittest.TestCase):
                 r = r.south
             c = c.east
         solution = generate_exact_cover_solutions(lattice)
+        print("Len solution: ", len(solution))
         for r in solution:
             print(r)
 

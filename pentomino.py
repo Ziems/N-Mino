@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from lattice import Lattice
+from exact_cover import generate_exact_cover_solutions
 
 class PentomintoShape():
     def __init__(self, shape, index=0, num_orientations=0, name=''):
@@ -257,19 +258,26 @@ class Pentominto_UnitTest(unittest.TestCase):
         # Knuth says this should be 1568 in length but its about 25% more than that. Hmmm.
         #print(len(binary_matrix))
 
-    # def test_exact_cover(self):
-    #     base_shapes = get_base_shapes()
-    #     col_names = []
-    #     for shape in base_shapes:
-    #         col_names.append(shape.name)
-    #     for i in range(1, 60+1):
-    #         col_names.append(i)
-    #     binary_matrix = generate_all_orientations_with_encodings(base_shapes)
-    #     lattice = Lattice(binary_matrix, col_names)
-    #     solutions = generate_exact_cover_solutions(lattice)
-    #     for i in solutions:
-    #         print(i.col_name)
-    #     self.assertIsNotNone(solutions)
+    def test_exact_cover(self):
+        base_shapes = get_base_shapes()
+        col_names = []
+        for shape in base_shapes:
+            col_names.append(shape.name)
+        for i in range(1, 60+1):
+            col_names.append(i)
+        binary_matrix = generate_all_orientations_with_encodings(base_shapes)
+        lattice = Lattice(binary_matrix, col_names)
+        c = lattice.head.east
+        while c is not lattice.head:
+            r = c.south
+            while r is not c:
+                if r.key is not None and r.key is 0:
+                    lattice.delete(r)
+                r = r.south
+            c = c.east
+        solutions = generate_exact_cover_solutions(lattice)
+        print("Len solution: ", len(solutions))
+        self.assertIsNotNone(solutions)
 
 def main():
     unittest.main()

@@ -15,7 +15,7 @@ class Node():
     :ivar col_name: the name of the column. Only not null if the node is a head
 
 	"""
-    def __init__(self, key=None, row_num = None, row_col = None, north = None, south = None, east = None, west = None, col_head = None, col_name=None):
+    def __init__(self, key=None, row_num = None, north = None, south = None, east = None, west = None, col_head = None, col_name=None):
         """ Initializes a new Lattice Node """
         self.key = key
         self.north = north
@@ -25,7 +25,6 @@ class Node():
         self.col_head = col_head
         self.col_name = col_name
         self.row_num = row_num
-        self.col_num = row_col
         self.size = 0
 
     def init_size(self):
@@ -87,7 +86,7 @@ class Lattice():
         for r in range(0, len(matrix)):
             lattice_node_matrix.append([])
             for c in range(0, len(matrix[r])):
-                lattice_node_matrix[r+1].append(Node(matrix[r][c], col_head=lattice_node_matrix[0][c]))
+                lattice_node_matrix[r+1].append(Node(matrix[r][c], row_num= r + 1, col_head=lattice_node_matrix[0][c]))
         
         # TRIVIALLY Connect the lattice nodes horizontally
         for r in range(0, len(lattice_node_matrix)):
