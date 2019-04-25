@@ -44,6 +44,10 @@ def uncover_col(lattice, c):
     return lattice
 
 def generate_exact_cover_solutions(lattice):
+    """
+	An implenetation of the dancing links solution to the exact cover problem.
+  	:ivar lattice: The lattice for the algorithm to run on
+    """
     solutions = []
     O = []
 
@@ -143,15 +147,7 @@ class ExactCover_UnitTest(unittest.TestCase):
                   ['1', '0', '0'],
                   ['1', '0', '1'],
                   ['0', '1', '0']]
-        lattice = Lattice(matrix, col_names)
-        c = lattice.head.east
-        while c is not lattice.head:
-            r = c.south
-            while r is not c:
-                if r.key is not None and r.key is '0':
-                    lattice.delete(r)
-                r = r.south
-            c = c.east
+        lattice = Lattice(matrix, col_names, delete_zeros=True)
         solutions = generate_exact_cover_solutions(lattice)
         solution_rows = []
         for s in range(len(solutions)):
@@ -163,6 +159,16 @@ class ExactCover_UnitTest(unittest.TestCase):
             r = r.sort()
         self.assertEqual(2, len(solutions))
         self.assertEqual([[1, 2], [3, 4]], solution_rows)
+
+    def test_generate_simple_exact_cover_solution2(self):
+        col_names = ['a', 'b', 'c', 'd']
+        matrix = [['0', '1', '1', '0'],
+                  ['1', '0', '0', '0'],
+                  ['1', '0', '1', '0'],
+                  ['0', '1', '0', '0']]
+        lattice = Lattice(matrix, col_names, delete_zeros=True)
+        solutions = generate_exact_cover_solutions(lattice)
+        self.assertEqual(0, len(solutions))
 
 
 def main():

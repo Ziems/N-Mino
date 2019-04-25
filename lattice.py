@@ -67,7 +67,7 @@ class Lattice():
     :ivar col_names: the list of names where index i corresponds to column i
     """
 
-    def __init__(self, matrix, col_names):
+    def __init__(self, matrix, col_names, delete_zeros=False):
         assert matrix is not None
         assert matrix[0] is not None
         assert matrix[0][0] is not None
@@ -118,6 +118,16 @@ class Lattice():
         while c is not self.head:
             c.init_size()
             c = c.east
+
+        if delete_zeros:
+            c = self.head.east
+            while c is not self.head:
+                r = c.south
+                while r is not c:
+                    if r.key is not None and r.key is '0':
+                        self.delete(r)
+                    r = r.south
+                c = c.east
         
     def delete(self, lattice_node):
         # Here you just have to make 2 new connections that skip over lattice_node
@@ -135,71 +145,71 @@ class Lattice():
 
     def __str__(self):
         # Printing solution that does not depend on rows or cols
-        # res = ""
-        # i = 0
-        # row_ref = self.head.east
-        # while row_ref.col_name == None or i == 0:
-        #     res += "("
-        #     col_ref = row_ref
-        #     j = 0
-        #     while (col_ref is not row_ref or j == 0) and col_ref is not self.head:
-        #         if col_ref.key is not None:
-        #             res += col_ref.key + ", "
-        #         elif col_ref.col_name is not None:
-        #             res += col_ref.col_name + ", "
-        #         col_ref = col_ref.east
-        #         j += 1
-        #     res = res[:-2]
-        #     i += 1
-        #     row_ref = row_ref.south
-        #     res += "), "
-        # res = res[:-2]
-        # return res
         res = ""
-        c = self.head.east
-        cs = {}
-        res += "("
-        while c is not self.head:
-            res += c.col_name + ", "
-            cs[c.col_name] = []
-            r = c.south
-            while r is not c:
-                cs[c.col_name].append(r.key)
-                r = r.south
-            c = c.east
-        res = res[:-2] + ")\n"
-        for i in cs.keys():
-            res += "[" + i + "]: "
-            for j in cs[i]:
-                res += j + ", "
-            res = res[:-2] + "\n"
+        i = 0
+        row_ref = self.head.east
+        while row_ref.col_name == None or i == 0:
+            res += "("
+            col_ref = row_ref
+            j = 0
+            while (col_ref is not row_ref or j == 0) and col_ref is not self.head:
+                if col_ref.key is not None:
+                    res += col_ref.key + ", "
+                elif col_ref.col_name is not None:
+                    res += col_ref.col_name + ", "
+                col_ref = col_ref.east
+                j += 1
+            res = res[:-2]
+            i += 1
+            row_ref = row_ref.south
+            res += "), "
+        res = res[:-2]
         return res
+        # res = ""
+        # c = self.head.east
+        # cs = {}
+        # res += "("
+        # while c is not self.head:
+        #     res += c.col_name + ", "
+        #     cs[c.col_name] = []
+        #     r = c.south
+        #     while r is not c:
+        #         cs[c.col_name].append(r.key)
+        #         r = r.south
+        #     c = c.east
+        # res = res[:-2] + ")\n"
+        # for i in cs.keys():
+        #     res += "[" + i + "]: "
+        #     for j in cs[i]:
+        #         res += j + ", "
+        #     res = res[:-2] + "\n"
+        # return res
 
 class LatticeNode_UnitTest(unittest.TestCase):
     def test_trivial_north(self):
-        ancor_node = LatticeNode(True)
-        north_node = LatticeNode(False)
+        ancor_node = Node(True)
+        north_node = Node(False)
         ancor_node.set_north(north_node)
         self.assertEqual(ancor_node.north, north_node)
         self.assertEqual(north_node.south, ancor_node)
 
     def test_trivial_south(self):
-        ancor_node = LatticeNode(True)
-        south_node = LatticeNode(False)
+        ancor_node = Node(True)
+        south_node = Node(False)
         ancor_node.set_south(south_node)
         self.assertEqual(ancor_node.south, south_node)
         self.assertEqual(south_node.north, ancor_node)
 
     def test_trivial_east(self):
-        ancor_node = LatticeNode(True)
-        east_node = LatticeNode(False)
+        ancor_node = Node(True)
+        east_node = Node(False)
         ancor_node.set_east(east_node)
         self.assertEqual(ancor_node.east, east_node)
         self.assertEqual(east_node.west, ancor_node)
 
     def test_trivial_west(self):
-        ancor_node = LatticeNode(True)
-        west_node = LatticeNode(False)
+        ancor_node = Node(True)
+        west_node = Node(False)
         ancor_node.set_west(west_node)
         self.assertEqual(ancor_node.west, west_node)
         self.assertEqual(west_node.east, ancor_node)
